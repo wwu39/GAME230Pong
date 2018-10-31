@@ -8,12 +8,12 @@
 void Pong::update_state(float dt)
 {
 	ball.move(dt);
+	player1.move(dt);
 }
 
 void Pong::render_frame()
 {
 	window.clear(Color(0, 0, 255));
-	ball.draw(window);
 
 	Font font;
 	font.loadFromFile("font.ttf");
@@ -24,12 +24,30 @@ void Pong::render_frame()
 	text.setFillColor(Color::Green);
 	text.setPosition(50, 300);
 	window.draw(text);
+
+	// draw background
+	window.draw(rail1);
+	window.draw(rail2);
+
+	ball.draw(window);
 }
 
 Pong::Pong()
 {
 	window.create(VideoMode(RES_WIDTH, RES_HEIGHT), GAMETILE);
 	ball.setPosition(RES_WIDTH / 2.0f, RES_HEIGHT / 2.0f);
+
+	railtex.loadFromFile("sprites/rail.png");
+
+	rail1.setSize({ 14, RES_HEIGHT });
+	rail1.setOrigin({ 7, RES_HEIGHT / 2.0f });
+	rail1.setTexture(&railtex);
+	rail1.setPosition({ 36, RES_HEIGHT / 2.0f });
+
+	rail2.setSize({ 14, RES_HEIGHT });
+	rail2.setOrigin({ 7, RES_HEIGHT / 2.0f });
+	rail2.setTexture(&railtex);
+	rail2.setPosition({ RES_WIDTH - 36, RES_HEIGHT / 2.0f });
 }
 
 
@@ -84,9 +102,8 @@ void Ball::move(float dt)
 {
 	Vector2f pos = shape.getPosition();
 	if ((pos.x <= BALL_CR && v.x < 0) || (pos.x >= RES_WIDTH - BALL_CR && v.x > 0)) v.x = -v.x;
-	if ((pos.y <= BALL_CR && v.y < 0) || (pos.y >= RES_HEIGHT - BALL_CR && v.y > 0))v.y = -v.y;
-	pos += v;
-	shape.setPosition(pos);
+	if ((pos.y <= BALL_CR && v.y < 0) || (pos.y >= RES_HEIGHT - BALL_CR && v.y > 0)) v.y = -v.y;
+	shape.setPosition(pos + v);
 }
 
 void Ball::draw(RenderWindow &w)
@@ -113,4 +130,23 @@ Paddle::Paddle()
 {
 	shape.setSize({ PADDLE_W, PADDLE_H });
 	shape.setOrigin({ PADDLE_W / 2.0f, PADDLE_H / 2.0f });
+}
+
+void Paddle::move(float dt)
+{
+}
+
+void Paddle::draw(RenderWindow &w)
+{
+	w.draw(shape);
+}
+
+void Paddle::setPosition(float x, float y)
+{
+	shape.setPosition({ x, y });
+}
+
+Vector2f Paddle::getPosition()
+{
+	return shape.getPosition();
 }
