@@ -11,10 +11,12 @@
 
 #define RES_WIDTH 800
 #define RES_HEIGHT 600
-
-#define BALL_R 10.0f
+#define BALL_R 30.0f // radius of the ball
+#define BALL_CR 12.0f // radius of the ball used in collision
 #define PADDLE_W 25.0f
 #define PADDLE_H 100.0f
+#define BALL_SPEED 2.0f
+#define RATE 10
 
 using namespace sf;
 
@@ -24,21 +26,24 @@ class Ball
 	Texture tex;
 	Sound hitsound;
 	Vector2f v;
-
-	friend class Pong;
-	friend class Paddle;
+	int curframe;
+	int rate;
+	void animate();
 
 public:
 	Ball();
 	void move(float dt);
+	void draw(RenderWindow&);
+	void setPosition(float x, float y);
+	Vector2f getPosition();
 };
 
 class Paddle
 {
 	RectangleShape shape;
 	Texture tex;
-	friend class Pong;
 
+public:
 	Paddle();
 };
 
@@ -51,6 +56,7 @@ class Pong
 
 	void update_state(float dt);
 	void render_frame();
+
 public:
 	Pong();
 	~Pong();
