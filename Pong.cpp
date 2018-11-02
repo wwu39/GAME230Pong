@@ -5,36 +5,61 @@
 
 #define PI 3.14159265358979323846f
 
+static Text text; // debug 
+int Pong::runtimes = 0; // static var
+
 void Pong::update_state(float dt)
 {
-	ball.move(dt);
-	player1.move(dt);
+	Vector2f bpos = ball.getPosition();
+	Vector2f p1pos = player1.getPosition();
+	Vector2f p2pos = player2.getPosition();
+	player1.move(dt, bpos);
+	player2.move(dt, bpos);
+	if (ball.status == NONE) if (ball.move(dt, p1pos, p2pos) == HIT) {
+		if (bpos.x < RES_WIDTH / 2.0f) {
+			player1.status = FIRE;
+			player1.ballv = ball.v;
+			player1.playCannonFireSound();
+		}
+		if (bpos.x > RES_WIDTH / 2.0f) {
+			player2.status = FIRE;
+			player2.ballv = ball.v;
+			player2.playCannonFireSound();
+		}
+	};
 }
 
-void Pong::render_frame()
+void Pong::render_frame(RenderWindow& window)
 {
 	window.clear(Color(0, 0, 255));
-
+	/*
 	Font font;
 	font.loadFromFile("font.ttf");
-	Text text;
 	text.setFont(font);
 	text.setCharacterSize(50);
-	text.setString("Hello, Pong!");
+	text.setString("Pong");
 	text.setFillColor(Color::Green);
-	text.setPosition(50, 300);
+	text.setPosition(RES_WIDTH / 2.0f, RES_HEIGHT / 2.0f);
 	window.draw(text);
-
+	*/
 	// draw background
 	window.draw(rail1);
 	window.draw(rail2);
 
-	ball.draw(window);
+	if (ball.status == NONE) {
+		ball.draw(window);
+		player1.draw(window);
+		player2.draw(window);
+	}
+	if (ball.status == EXPLODE) {
+		player1.draw(window);
+		player2.draw(window);
+		ball.draw(window);
+	}
 }
 
 Pong::Pong()
 {
-	window.create(VideoMode(RES_WIDTH, RES_HEIGHT), GAMETILE);
 	ball.setPosition(RES_WIDTH / 2.0f, RES_HEIGHT / 2.0f);
 
 	railtex.loadFromFile("sprites/rail.png");
@@ -48,6 +73,8 @@ Pong::Pong()
 	rail2.setOrigin({ 7, RES_HEIGHT / 2.0f });
 	rail2.setTexture(&railtex);
 	rail2.setPosition({ RES_WIDTH - 36, RES_HEIGHT / 2.0f });
+
+	++runtimes;
 }
 
 
@@ -55,7 +82,7 @@ Pong::~Pong()
 {
 }
 
-int Pong::run()
+int Pong::run(RenderWindow& window)
 {
 	Clock clock;
 	while (window.isOpen())
@@ -68,9 +95,8 @@ int Pong::run()
 		}
 
 		float dt = clock.restart().asSeconds();
-
 		update_state(dt);
-		render_frame();
+		render_frame(window);
 		window.display();
 	}
 	return 0;
@@ -85,35 +111,126 @@ void Ball::animate()
 	curframe = (curframe + 1) % 16;
 }
 
+void Ball::explode()
+{
+	std::ostringstream filename;
+	filename << "sprites/explode 00" << (curexpfr >= 10 ? "" : "0") << curexpfr << ".png";
+	exptex.loadFromFile(filename.str());
+	explosion.setTexture(&exptex);
+	++curexpfr;
+	if (curexpfr == 28) { // explodsion ends
+		status = NONE;
+		curexpfr = 0;
+		//reset explosion texture
+		exptex.loadFromFile("sprites/explode 0000.png");
+		explosion.setTexture(&exptex);
+		// reset the ball
+		srand((unsigned)time(nullptr));
+		float angle = (0.75f + float(rand() % 50 + 1) / 100.0f) * PI;
+		v = { BALL_SPEED * cosf(angle), BALL_SPEED * sinf(angle) };
+		shape.setPosition({ RES_WIDTH / 2.0f, RES_HEIGHT / 2.0f });
+	}
+}
+
+void Ball::playRandomHitsound()
+{
+	srand((unsigned)time(nullptr) * unsigned int(v.x));
+	std::ostringstream filename;
+	int idx = 1 + rand() % 10;
+	filename << "sound/metalhit(" << idx << ").wav";
+	buf.loadFromFile(filename.str());
+	hitsound.setBuffer(buf);
+	if (hitsound.getStatus() != SoundSource::Playing) hitsound.play();
+}
+
+void Ball::playLoadHitsound()
+{
+	srand((unsigned)time(nullptr) * unsigned int(v.y));
+	std::ostringstream filename;
+	int idx = 1 + rand() % 6;
+	filename << "sound/load(" << idx << ").wav";
+	buf.loadFromFile(filename.str());
+	hitsound.setBuffer(buf);
+	if (hitsound.getStatus() != SoundSource::Playing) hitsound.play();
+}
+
+float Ball::length(Vector2f a, Vector2f b)
+{
+	Vector2f c = a - b;
+	return sqrt(c.x*c.x + c.y*c.y);
+}
+
 Ball::Ball()
 {
 	shape.setRadius(BALL_R);
 	shape.setOrigin({ BALL_R, BALL_R });
+	explosion.setSize({ 120, 134 });
+	explosion.setOrigin({ 60, 67 });
 	curframe = 0;
 	rate = RATE;
 
 	// random initial angle between 0-180
 	srand((unsigned)time(nullptr));
-	float angle = (float)(rand() % 180) / 180.0f * PI;
+	float angle = (0.75f + float(rand() % 50 + 1) / 100.0f) * PI;
 	v = { BALL_SPEED * cosf(angle), BALL_SPEED * sinf(angle) };
+
+	exptex.loadFromFile("sprites/explode 0000.png");
+	explosion.setTexture(&exptex);
 }
 
-void Ball::move(float dt)
+int Ball::move(float dt, Vector2f p1pos, Vector2f p2pos)
 {
 	Vector2f pos = shape.getPosition();
-	if ((pos.x <= BALL_CR && v.x < 0) || (pos.x >= RES_WIDTH - BALL_CR && v.x > 0)) v.x = -v.x;
-	if ((pos.y <= BALL_CR && v.y < 0) || (pos.y >= RES_HEIGHT - BALL_CR && v.y > 0)) v.y = -v.y;
+	int ret = 0;
+	if (pos.x > PADDLE_LOC && pos.x < RES_WIDTH - PADDLE_LOC) {
+		// hit a wall
+		if ((pos.y <= BALL_CR && v.y < 0) || (pos.y >= RES_HEIGHT - BALL_CR && v.y > 0)) {
+			v.y = -v.y;
+			playRandomHitsound();
+		}
+		// hit a paddle from left or right
+		if ((p1pos.y - PADDLE_H / 2.0f - BALL_CR <= pos.y && pos.y <= p1pos.y + PADDLE_H / 2.0f + BALL_CR && pos.x - BALL_CR <= p1pos.x && v.x < 0)
+			|| (p2pos.y - PADDLE_H / 2.0f - BALL_CR <= pos.y && pos.y <= p2pos.y + PADDLE_H / 2.0f + BALL_CR && pos.x + BALL_CR >= p2pos.x && v.x > 0)) {
+			v.x = -v.x;
+			if (v.x > 0.0f) v.x += vinc.x;
+			if (v.x < 0.0f) v.x -= vinc.x;
+			if (v.y > 0.0f) v.y += vinc.y;
+			if (v.y < 0.0f) v.y -= vinc.y;
+			playLoadHitsound();
+			ret = HIT;
+		}
+		// hit a paddle from up or down
+		/*
+		if ((pos.x <= p1pos.x + BALL_CR && pos.y >= p1pos.y - PADDLE_H / 2.0f - BALL_CR)
+			|| (pos.x <= p1pos.x + BALL_CR && pos.y <= p1pos.y + PADDLE_H / 2.0f + BALL_CR)
+			|| (pos.x >= p2pos.x - BALL_CR && pos.y >= p2pos.y - PADDLE_H / 2.0f - BALL_CR)
+			|| (pos.x >= p2pos.x - BALL_CR && pos.y <= p2pos.y + PADDLE_H / 2.0f + BALL_CR)) {
+			v.y = -v.y;
+			playLoadHitsound();
+		}
+		*/
+	}
+	else { 
+		status = EXPLODE;
+		explosion.setPosition(pos);
+		buf.loadFromFile("sound/explosion.wav");
+		hitsound.setBuffer(buf);
+		if (hitsound.getStatus() != SoundSource::Playing) hitsound.play();
+	}
 	shape.setPosition(pos + v);
+	return ret;
 }
 
 void Ball::draw(RenderWindow &w)
 {
 	++rate;
 	if (rate / RATE) { 
-		animate();
+		if (status == NONE) animate();
+		if (status == EXPLODE) explode();
 		rate = 0;
 	}
-	w.draw(shape);
+	if (status == NONE) w.draw(shape);
+	if (status == EXPLODE) w.draw(explosion);
 }
 
 void Ball::setPosition(float x, float y)
@@ -126,18 +243,83 @@ Vector2f Ball::getPosition()
 	return shape.getPosition();
 }
 
-Paddle::Paddle()
+void Paddle::animate()
 {
-	shape.setSize({ PADDLE_W, PADDLE_H });
-	shape.setOrigin({ PADDLE_W / 2.0f, PADDLE_H / 2.0f });
+	std::ostringstream filename;
+	filename << "sprites/paddle 00" << (curframe >= 10 ? "" : "0") << curframe << ".png";
+	tex.loadFromFile(filename.str());
+	shape.setTexture(&tex);
+	if (!reverse) ++curframe; else --curframe;
+	if (side == RIGHT) {
+		if (curframe == 37) reverse = true;
+		if (curframe == 19) reverse = false;
+	}
+	else {
+		if (curframe == 18) reverse = true;
+		if (curframe == 0) reverse = false;
+	}
 }
 
-void Paddle::move(float dt)
+void Paddle::fire()
 {
+	// decide which frame to use
+	float angle = asin(ballv.y);
+	if (side == LEFT) {
+		curframe = int((angle + 0.5 * PI) * 18.0f / PI);
+	}
+	if (side == RIGHT) {
+		curframe = int((angle + 0.5 * PI) * 18.0f / PI) + 19;
+	}
+	std::ostringstream filename;
+	filename << "sprites/paddle 00" << curframe + 38 << ".png";
+	tex.loadFromFile(filename.str());
+	shape.setTexture(&tex);
+	++curfrfr;
+	// switch back to NONE status
+	if (curfrfr == 5) { // explodsion ends
+		status = NONE;
+		curfrfr = 0;
+	}
+}
+
+Paddle::Paddle(int side, bool isAI)
+{
+	this->isAI = isAI;
+	this->side = side;
+	shape.setSize({ PADDLE_W, PADDLE_H });
+	shape.setOrigin({ PADDLE_W / 2.0f, PADDLE_H / 2.0f });
+	shape.setPosition({ float(isAI ? RES_WIDTH - PADDLE_LOC : PADDLE_LOC), RES_HEIGHT / 2.0f });
+	curframe = isAI ? 19 : 0;
+	rate = RATE;
+	reverse = false;
+}
+
+void Paddle::move(float dt, Vector2f bpos)
+{
+	Vector2f pos = shape.getPosition();
+	if (!isAI) {
+		if (Keyboard::isKeyPressed(Keyboard::Up) && pos.y >= 53)
+			pos.y -= PADDLE_SPEED * dt;
+		if (Keyboard::isKeyPressed(Keyboard::Down) && pos.y <= RES_HEIGHT - 53)
+			pos.y += PADDLE_SPEED * dt;
+	}
+	else if (pos.x - bpos.x < RES_WIDTH * 0.75) {
+		if (pos.y > bpos.y && pos.y >= 53)
+			pos.y -= PADDLE_SPEED * dt;
+		if (pos.y < bpos.y && pos.y <= RES_HEIGHT - 53)
+			pos.y += PADDLE_SPEED * dt;
+	}
+	shape.setPosition(pos);
 }
 
 void Paddle::draw(RenderWindow &w)
 {
+	++rate;
+	if (rate / RATE) {
+		if (status == NONE) animate();
+		if (status == FIRE) fire();
+		rate = 0;
+	}
 	w.draw(shape);
 }
 
@@ -149,4 +331,11 @@ void Paddle::setPosition(float x, float y)
 Vector2f Paddle::getPosition()
 {
 	return shape.getPosition();
+}
+
+void Paddle::playCannonFireSound()
+{
+	buf.loadFromFile("sound/cannonfire.wav");
+	firesound.setBuffer(buf);
+	if (firesound.getStatus() != SoundSource::Playing) firesound.play();
 }
