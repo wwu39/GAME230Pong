@@ -107,7 +107,7 @@ class Pong
 
 	SoundBuffer buf;
 	Sound sound;
-	RectangleShape explosions[5]; // used when one loses
+	RectangleShape explosions[6]; // used when one loses
 	Texture exptex;
 
 	int rate = RATE;

@@ -41,8 +41,8 @@ void Pong::ending_state(float dt)
 		filename << "sprites/explode 00" << (curexpfr >= 10 ? "" : "0") << curexpfr << ".png";
 		exptex.loadFromFile(filename.str());
 		float x = (winner == PLAYER1 ? RES_WIDTH - 28.0f : 28.0f);
-		for (int i = 0; i < 5; ++i) {
-			explosions[i].setPosition({ x, 32.0f + 134.0f * i });
+		for (int i = 0; i < 6; ++i) {
+			explosions[i].setPosition({ x, 50.0f + 100.0f * i });
 			explosions[i].setTexture(&exptex);
 		}
 		++curexpfr;
@@ -85,7 +85,7 @@ void Pong::render_frame(RenderWindow& window)
 		if (winner == NO_WINNER) ball.draw(window);
 	}
 
-	if (winner != NO_WINNER) for (int i = 0; i < 5; ++i)
+	if (winner != NO_WINNER) for (int i = 0; i < 6; ++i)
 		window.draw(explosions[i]);
 }
 
@@ -121,7 +121,7 @@ Pong::Pong(int numOfPlayers)
 
 	// initialize losing explosions
 	exptex.loadFromFile("sprites/explode 0000.png");
-	for (int i = 0; i < 5; ++i) {
+	for (int i = 0; i < 6; ++i) {
 		explosions[i].setSize({ 120, 134 });
 		explosions[i].setOrigin({ 60, 67 });
 		explosions[i].setTexture(&exptex);
