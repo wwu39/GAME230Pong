@@ -26,6 +26,13 @@
 
 #include "Pong.h"
 
+#define ONE_PLAYER 1
+#define TWO_PLAYERS 2
+
+#define EXIT 0
+#define REPEAT 1
+#define MENU 2
+
 int main()
 {
 	RenderWindow window;
@@ -34,7 +41,7 @@ int main()
 		// UI
 
 		// Start game
-		Pong * game = new Pong(); // start a new game
+		Pong * game = new Pong(ONE_PLAYER); // start a new game
 		int ret = game->run(window);
 		delete game; // game over
 		if (ret == 0) return ret;

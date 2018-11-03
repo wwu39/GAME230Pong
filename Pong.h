@@ -19,7 +19,9 @@
 #define PADDLE_SPEED 300
 #define RATE 100
 
-enum STATUS { NONE = 0, EXPLODE, FIRE };
+enum STATUS { NONE = 0, EXPLODE, FIRE, ENDING };
+enum PLAYER { P1 = 0, P2 = 1 };
+enum WINNER { NO_WINNER = 0, PLAYER1, PLAYER2 };
 
 using namespace sf;
 
@@ -39,11 +41,12 @@ class Ball
 	void explode();
 	void playRandomHitsound();
 	void playLoadHitsound();
-	float length(Vector2f, Vector2f);
 
 public:
 	Vector2f v;
 	STATUS status = NONE;
+	int lscr = 0, rscr = 0;
+	PLAYER lastWin = P1;
 
 	Ball();
 #define HIT 1
@@ -81,29 +84,45 @@ public:
 	void setPosition(float x, float y);
 	Vector2f getPosition();
 	void playCannonFireSound();
+
+	friend class Pong;
 };
 
 class Pong
 {
 	static int runtimes;
-
 	Ball ball;
 	Paddle player1 { LEFT, false };
 	Paddle player2 { RIGHT, true }; // AI
 
 	// background staff
+	Font font;
+	Text text;
+	RectangleShape background;
+	Texture bgtex;
 	Texture railtex;
 	RectangleShape rail1;
 	RectangleShape rail2;
 	RectangleShape bg;
 
-	int rate;
+	SoundBuffer buf;
+	Sound sound;
+	RectangleShape explosions[5]; // used when one loses
+	Texture exptex;
+
+	int rate = RATE;
+	int curexpfr = 0;
+	int exptimes = 0;
 
 	void update_state(float dt);
+	void ending_state(float dt);
 	void render_frame(RenderWindow&);
 
 public:
-	Pong();
+	STATUS status = NONE;
+	WINNER winner = NO_WINNER;
+
+	Pong(int);
 	~Pong();
 	int run(RenderWindow&);
 };
