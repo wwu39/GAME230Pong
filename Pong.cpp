@@ -299,10 +299,11 @@ int Ball::move(float dt, Vector2f p1pos, Vector2f p2pos)
 		if ((p1pos.y - PADDLE_H / 2.0f <= pos.y && pos.y <= p1pos.y + PADDLE_H / 2.0f && pos.x - BALL_CR <= p1pos.x && v.x < 0)
 			|| (p2pos.y - PADDLE_H / 2.0f <= pos.y && pos.y <= p2pos.y + PADDLE_H / 2.0f && pos.x + BALL_CR >= p2pos.x && v.x > 0)) {
 			v.x = -v.x;
-			if (v.x > 0.0f) v.x += vinc.x;
-			if (v.x < 0.0f) v.x -= vinc.x;
-			if (v.y > 0.0f) v.y += vinc.y;
-			if (v.y < 0.0f) v.y -= vinc.y;
+			// The angle at which it bounces off depends on where on the paddle the ball hit.
+			if (v.x > 0.0f) v.x += (2 * (((v.x > 0 ? p2pos.y : p1pos.y) + PADDLE_H / 2.0f) - pos.y) / PADDLE_H * vinc.x);
+			if (v.x < 0.0f) v.x -= (2 * (((v.x > 0 ? p2pos.y : p1pos.y) + PADDLE_H / 2.0f) - pos.y) / PADDLE_H * vinc.x);
+			if (v.y > 0.0f) v.y += (2 * (pos.y - ((v.x > 0 ? p2pos.y : p1pos.y) - PADDLE_H / 2.0f)) / PADDLE_H * vinc.y);
+			if (v.y < 0.0f) v.y -= (2 * (pos.y - ((v.x > 0 ? p2pos.y : p1pos.y) - PADDLE_H / 2.0f)) / PADDLE_H * vinc.y);
 			playLoadHitsound();
 			ret = HIT;
 		}
