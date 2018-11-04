@@ -121,6 +121,12 @@ class Pong
 	RectangleShape explosions[6]; // used when one loses
 	Texture exptex;
 
+	SoundBuffer buf2;
+	Sound optionswitch;
+
+	SoundBuffer buf3;
+	Sound cheer;
+
 	int rate = RATE;
 	int presskeyrate = RATE;
 	int curexpfr = 0;

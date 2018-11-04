@@ -50,9 +50,8 @@ void Pong::ending_state(float dt)
 			curexpfr = 0;
 			exptex.loadFromFile("sprites/explode 0000.png");
 			if (exptimes < 1) {
-				buf.loadFromFile("sound/explosion.wav");
-				sound.setBuffer(buf);
 				if (sound.getStatus() != SoundSource::Playing) sound.play();
+				if (cheer.getStatus() != SoundSource::Playing) cheer.play();
 			}
 			++exptimes;
 		}
@@ -150,6 +149,16 @@ Pong::Pong(int numOfPlayers)
 		explosions[i].setTexture(&exptex);
 	}
 
+	// explosion sound
+	buf.loadFromFile("sound/explosion.wav");
+	sound.setBuffer(buf);
+	// option switching sound
+	buf2.loadFromFile("sound/option.wav");
+	optionswitch.setBuffer(buf2);
+	// cheer sound
+	buf3.loadFromFile("sound/cheer.wav");
+	cheer.setBuffer(buf3);
+
 	++runtimes;
 }
 
@@ -180,9 +189,15 @@ int Pong::run(RenderWindow& window)
 			if (presskeyrate / (RATE)) {
 				Vector2f pos = cursor.getPosition();
 				if (Keyboard::isKeyPressed(Keyboard::W) || Keyboard::isKeyPressed(Keyboard::Up))
-					if (pos.y > 375.0f && pos.y <= 475.0f) pos.y -= 50.0f;
+					if (pos.y > 375.0f && pos.y <= 475.0f) {
+						pos.y -= 50.0f;
+						optionswitch.play();
+					}
 				if (Keyboard::isKeyPressed(Keyboard::S) || Keyboard::isKeyPressed(Keyboard::Down))
-					if (pos.y >= 375.0f && pos.y < 475.0f) pos.y += 50.0f;
+					if (pos.y >= 375.0f && pos.y < 475.0f) {
+						pos.y += 50.0f;
+						optionswitch.play();
+					}
 				cursor.setPosition(pos);
 				presskeyrate = 0;
 			}

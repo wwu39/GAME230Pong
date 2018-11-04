@@ -37,9 +37,13 @@ int main()
 	Texture curtex;
 	Font font;
 	Text options;
+	SoundBuffer buf;
+	Sound optionswitch;
 	int rate = RATE;
+	int rate2 = 0;
 	int ret = REPEAT;
 	int mode = ONE_PLAYER;
+	STATUS status = NONE;
 
 	// seting up menu background
 	background.setSize({ RES_WIDTH, RES_HEIGHT });
@@ -63,6 +67,10 @@ int main()
 	cursor.setTexture(&curtex);
 	cursor.setPosition(265, 375);
 
+	// setting up sound
+	buf.loadFromFile("sound/option.wav");
+	optionswitch.setBuffer(buf);
+
 	// creating window
 	window.create(VideoMode(RES_WIDTH, RES_HEIGHT), GAMETILE);
 
@@ -80,30 +88,46 @@ int main()
 
 		float dt = clock.restart().asSeconds();
 		// update state
-		++rate;
-		if (rate / RATE) {
-			Vector2f pos = cursor.getPosition();
-			if (Keyboard::isKeyPressed(Keyboard::W) || Keyboard::isKeyPressed(Keyboard::Up))
-				if (pos.y > 375.0f && pos.y <= 475.0f) pos.y -= 50.0f;
-			if (Keyboard::isKeyPressed(Keyboard::S) || Keyboard::isKeyPressed(Keyboard::Down))
-				if (pos.y >= 375.0f && pos.y < 475.0f) pos.y += 50.0f;
-			cursor.setPosition(pos);
-			rate = 0;
-			if (Keyboard::isKeyPressed(Keyboard::Enter) || Keyboard::isKeyPressed(Keyboard::Space)) {
+		if (status == NONE) {
+			++rate;
+			if (rate / RATE) {
 				Vector2f pos = cursor.getPosition();
-				if (pos.y == 375.0f) {}
-				if (pos.y == 425.0f) mode = TWO_PLAYERS;
-				if (pos.y == 475.0f) return EXIT;
+				if (Keyboard::isKeyPressed(Keyboard::W) || Keyboard::isKeyPressed(Keyboard::Up))
+					if (pos.y > 375.0f && pos.y <= 475.0f) {
+						pos.y -= 50.0f;
+						optionswitch.play();
+					}
+				if (Keyboard::isKeyPressed(Keyboard::S) || Keyboard::isKeyPressed(Keyboard::Down))
+					if (pos.y >= 375.0f && pos.y < 475.0f) {
+						pos.y += 50.0f;
+						optionswitch.play();
+					}
+				cursor.setPosition(pos);
+				if (Keyboard::isKeyPressed(Keyboard::Enter) || Keyboard::isKeyPressed(Keyboard::Space)) {
+					Vector2f pos = cursor.getPosition();
+					if (pos.y == 375.0f) {}
+					if (pos.y == 425.0f) mode = TWO_PLAYERS;
+					if (pos.y == 475.0f) return EXIT;
 
-				// Start game
-				while (ret == REPEAT) {
-					Pong * game = new Pong(mode); // start a new game
-					ret = game->run(window);
-					delete game; // game over
-					if (ret == EXIT) return ret; // if exit from inside
-					game = nullptr;
+					// Start game
+					while (ret == REPEAT) {
+						Pong * game = new Pong(mode); // start a new game
+						ret = game->run(window);
+						delete game; // game over
+						if (ret == EXIT) return ret; // if exit from inside
+						if (ret == MENU) status = ENDING; // if exit from inside
+						game = nullptr;
+					}
+					ret = REPEAT;
 				}
-				ret = REPEAT;
+				rate = 0;
+			}
+		}
+		if (status == ENDING) {
+			++rate2;
+			if (rate2 / (RATE * 8)) {
+				status = NONE;
+				rate2 = 0;
 			}
 		}
 		// rander frame
