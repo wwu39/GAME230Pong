@@ -37,18 +37,15 @@ void Pong::ending_state(float dt)
 	++rate;
 	if (rate / RATE) {
 		// explosion
-		std::ostringstream filename;
-		filename << "sprites/explode 00" << (curexpfr >= 10 ? "" : "0") << curexpfr << ".png";
-		exptex.loadFromFile(filename.str());
 		float x = (winner == PLAYER1 ? RES_WIDTH - 28.0f : 28.0f);
 		for (int i = 0; i < 6; ++i) {
 			explosions[i].setPosition({ x, 50.0f + 100.0f * i });
-			explosions[i].setTexture(&exptex);
+			explosions[i].setTexture(&exptex[curexpfr]);
 		}
 		++curexpfr;
 		if (curexpfr == 28) { // single explosion ends
 			curexpfr = 0;
-			exptex.loadFromFile("sprites/explode 0000.png");
+			for (int i = 0; i < 6; ++i) explosions[i].setTexture(&exptex[curexpfr]);
 			if (exptimes < 1) {
 				if (sound.getStatus() != SoundSource::Playing) sound.play();
 				if (cheer.getStatus() != SoundSource::Playing) cheer.play();
@@ -142,11 +139,15 @@ Pong::Pong(int numOfPlayers)
 	cursor.setPosition(265, 375);
 
 	// initialize losing explosions
-	exptex.loadFromFile("sprites/explode 0000.png");
+	for (int i = 0; i < 27; ++i) {
+		std::ostringstream filename;
+		filename << "sprites/explode 00" << (i >= 10 ? "" : "0") << i << ".png";
+		exptex[i].loadFromFile(filename.str());
+	}
 	for (int i = 0; i < 6; ++i) {
 		explosions[i].setSize({ 120, 134 });
 		explosions[i].setOrigin({ 60, 67 });
-		explosions[i].setTexture(&exptex);
+		explosions[i].setTexture(&exptex[0]);
 	}
 
 	// explosion sound
@@ -216,26 +217,19 @@ int Pong::run(RenderWindow& window)
 
 void Ball::animate()
 {
-	std::ostringstream filename;
-	filename << "sprites/bomb 00" << (curframe >= 10 ? "" : "0") << curframe << ".png";
-	tex.loadFromFile(filename.str());
-	shape.setTexture(&tex);
+	shape.setTexture(&tex[curframe]);
 	curframe = (curframe + 1) % 16;
 }
 
 void Ball::explode()
 {
-	std::ostringstream filename;
-	filename << "sprites/explode 00" << (curexpfr >= 10 ? "" : "0") << curexpfr << ".png";
-	exptex.loadFromFile(filename.str());
-	explosion.setTexture(&exptex);
+	explosion.setTexture(&exptex[curexpfr]);
 	++curexpfr;
 	if (curexpfr == 28) { // explodsion ends
 		status = NONE;
 		curexpfr = 0;
 		//reset explosion texture
-		exptex.loadFromFile("sprites/explode 0000.png");
-		explosion.setTexture(&exptex);
+		explosion.setTexture(&exptex[curexpfr]);
 		// reset the ball
 		srand((unsigned)time(nullptr));
 		float angle = (0.75f + float(rand() % 50 + 1) / 100.0f) * PI;
@@ -282,8 +276,20 @@ Ball::Ball()
 	float angle = (0.75f + float(rand() % 50 + 1) / 100.0f) * PI;
 	v = { BALL_SPEED * cosf(angle), BALL_SPEED * sinf(angle) };
 
-	exptex.loadFromFile("sprites/explode 0000.png");
-	explosion.setTexture(&exptex);
+	// int ball texture
+	for (int i = 0; i < 16; ++i) {
+		std::ostringstream filename;
+		filename << "sprites/bomb 00" << (i >= 10 ? "" : "0") << i << ".png";
+		tex[i].loadFromFile(filename.str());
+	}
+
+	// init exp texture
+	for (int i = 0; i < 27; ++i) {
+		std::ostringstream filename;
+		filename << "sprites/explode 00" << (i >= 10 ? "" : "0") << i << ".png";
+		exptex[i].loadFromFile(filename.str());
+	}
+	explosion.setTexture(&exptex[0]);
 
 	buf2.loadFromFile("sound/reload.wav");
 	reload.setBuffer(buf2);
@@ -350,10 +356,7 @@ Vector2f Ball::getPosition()
 
 void Paddle::animate()
 {
-	std::ostringstream filename;
-	filename << "sprites/paddle 00" << (curframe >= 10 ? "" : "0") << curframe << ".png";
-	tex.loadFromFile(filename.str());
-	shape.setTexture(&tex);
+	shape.setTexture(&tex[curframe]);
 	if (!reverse) ++curframe; else --curframe;
 	if (side == RIGHT) {
 		if (curframe == 37) reverse = true;
@@ -375,10 +378,7 @@ void Paddle::fire()
 	if (side == RIGHT) {
 		curframe = int((angle + 0.5 * PI) * 18.0f / PI) + 19;
 	}
-	std::ostringstream filename;
-	filename << "sprites/paddle 00" << curframe + 38 << ".png";
-	tex.loadFromFile(filename.str());
-	shape.setTexture(&tex);
+	shape.setTexture(&tex[curframe + 38]);
 	++curfrfr;
 	// switch back to NONE status
 	if (curfrfr == 5) { // explodsion ends
@@ -394,7 +394,16 @@ Paddle::Paddle(int side, bool isAI)
 	shape.setSize({ PADDLE_W, PADDLE_H });
 	shape.setOrigin({ PADDLE_W / 2.0f, PADDLE_H / 2.0f });
 	shape.setPosition({ float(isAI ? RES_WIDTH - PADDLE_LOC : PADDLE_LOC), RES_HEIGHT / 2.0f });
-	curframe = isAI ? 19 : 0;
+
+	// init texture
+	for (int i = 0; i < 76; ++i) {
+		std::ostringstream filename;
+		filename << "sprites/paddle 00" << (i >= 10 ? "" : "0") << i << ".png";
+		tex[i].loadFromFile(filename.str());
+	}
+	curframe = side == RIGHT ? 19 : 0;
+	shape.setTexture(&tex[curframe]);
+	
 	rate = RATE;
 	reverse = false;
 }

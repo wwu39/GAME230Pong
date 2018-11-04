@@ -37,8 +37,8 @@ class Ball
 {
 	CircleShape shape;
 	RectangleShape explosion;
-	Texture tex;
-	Texture exptex;
+	Texture tex[16];
+	Texture exptex[27];
 	SoundBuffer buf;
 	Sound hitsound;
 	SoundBuffer buf2;
@@ -72,7 +72,7 @@ public:
 class Paddle
 {
 	RectangleShape shape;
-	Texture tex;
+	Texture tex[76];
 	SoundBuffer buf;
 	Sound firesound;
 	int curframe;
@@ -121,7 +121,7 @@ class Pong
 	SoundBuffer buf;
 	Sound sound;
 	RectangleShape explosions[6]; // used when one loses
-	Texture exptex;
+	Texture exptex[27];
 
 	SoundBuffer buf2;
 	Sound optionswitch;
