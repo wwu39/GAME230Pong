@@ -311,10 +311,10 @@ int Ball::move(float dt, Vector2f p1pos, Vector2f p2pos)
 			|| (p2pos.y - PADDLE_H / 2.0f <= pos.y && pos.y <= p2pos.y + PADDLE_H / 2.0f && pos.x + BALL_CR >= p2pos.x && v.x > 0)) {
 			v.x = -v.x;
 			// The angle at which it bounces off depends on where on the paddle the ball hit.
-			if (v.x > 0.0f) v.x += (2 * (((v.x > 0 ? p2pos.y : p1pos.y) + PADDLE_H / 2.0f) - pos.y) / PADDLE_H * vinc.x);
-			if (v.x < 0.0f) v.x -= (2 * (((v.x > 0 ? p2pos.y : p1pos.y) + PADDLE_H / 2.0f) - pos.y) / PADDLE_H * vinc.x);
-			if (v.y > 0.0f) v.y += (2 * (pos.y - ((v.x > 0 ? p2pos.y : p1pos.y) - PADDLE_H / 2.0f)) / PADDLE_H * vinc.y);
-			if (v.y < 0.0f) v.y -= (2 * (pos.y - ((v.x > 0 ? p2pos.y : p1pos.y) - PADDLE_H / 2.0f)) / PADDLE_H * vinc.y);
+			if (v.x > 0.0f) v.x += (2 * ((p2pos.y + PADDLE_H / 2.0f) - pos.y) / PADDLE_H * vinc.x);
+			if (v.x < 0.0f) v.x -= (2 * ((p1pos.y + PADDLE_H / 2.0f) - pos.y) / PADDLE_H * vinc.x);
+			if (v.y > 0.0f) v.y += (2 * (pos.y - (p2pos.y - PADDLE_H / 2.0f)) / PADDLE_H * vinc.y);
+			if (v.y < 0.0f) v.y -= (2 * (pos.y - (p1pos.y - PADDLE_H / 2.0f)) / PADDLE_H * vinc.y);
 			playLoadHitsound();
 			ret = HIT;
 		}
@@ -371,12 +371,12 @@ void Paddle::animate()
 void Paddle::fire()
 {
 	// decide which frame to use
-	float angle = asin(ballv.y);
+	float angle = acos(-ballv.y / sqrt(ballv.x * ballv.x + ballv.y * ballv.y));
 	if (side == LEFT) {
-		curframe = int((angle + 0.5 * PI) * 18.0f / PI);
+		curframe = int(angle * 18.0f / PI);
 	}
 	if (side == RIGHT) {
-		curframe = int((angle + 0.5 * PI) * 18.0f / PI) + 19;
+		curframe = int(angle * 18.0f / PI) + 19;
 	}
 	shape.setTexture(&tex[curframe + 38]);
 	++curfrfr;
