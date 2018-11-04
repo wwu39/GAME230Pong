@@ -10,7 +10,7 @@
 #include <sstream>
 
 #define GAMETILE "RailDefender"
-#define WINSCORE 1
+#define WINSCORE 5
 #define RES_WIDTH 800 // resolution
 #define RES_HEIGHT 600 // resolution
 #define BALL_R 30.0f // radius of the ball
