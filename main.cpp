@@ -105,7 +105,7 @@ int main()
 				cursor.setPosition(pos);
 				if (Keyboard::isKeyPressed(Keyboard::Enter) || Keyboard::isKeyPressed(Keyboard::Space)) {
 					Vector2f pos = cursor.getPosition();
-					if (pos.y == 375.0f) {}
+					if (pos.y == 375.0f) mode = ONE_PLAYER;
 					if (pos.y == 425.0f) mode = TWO_PLAYERS;
 					if (pos.y == 475.0f) return EXIT;
 
