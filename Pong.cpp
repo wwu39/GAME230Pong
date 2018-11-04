@@ -1,7 +1,6 @@
 #include "Pong.h"
 
 #include <cmath>
-#include <sstream>
 
 #define PI 3.14159265358979323846f
 
@@ -28,8 +27,8 @@ void Pong::update_state(float dt)
 	}
 	std::ostringstream scores;
 	scores << ball.lscr << " : " << ball.rscr;
-	if (ball.lscr == 5) winner = PLAYER1;
-	if (ball.rscr == 5) winner = PLAYER2;
+	if (ball.lscr == WINSCORE) winner = PLAYER1;
+	if (ball.rscr == WINSCORE) winner = PLAYER2;
 	text.setString(scores.str());
 }
 
@@ -37,6 +36,7 @@ void Pong::ending_state(float dt)
 {
 	++rate;
 	if (rate / RATE) {
+		// explosion
 		std::ostringstream filename;
 		filename << "sprites/explode 00" << (curexpfr >= 10 ? "" : "0") << curexpfr << ".png";
 		exptex.loadFromFile(filename.str());
@@ -62,6 +62,14 @@ void Pong::ending_state(float dt)
 		}
 		rate = 0;
 	}
+	std::ostringstream str;
+	str << "PLAYER ";
+	if (winner == PLAYER1) str << "1";
+	if (winner == PLAYER2) str << "2";
+	str << std::endl << "  WINS";
+	text.setString(str.str());
+	text.setCharacterSize(100);
+	text.setLineSpacing(0.75);
 }
 
 void Pong::render_frame(RenderWindow& window)
@@ -87,30 +95,31 @@ void Pong::render_frame(RenderWindow& window)
 
 	if (winner != NO_WINNER) for (int i = 0; i < 6; ++i)
 		window.draw(explosions[i]);
+	if (status == ENDING) {
+		window.draw(cursor);
+		window.draw(options);
+	}
 }
 
 Pong::Pong(int numOfPlayers)
 {
-	if (numOfPlayers == 2) player2.isAI = false;
-
-	ball.setPosition(RES_WIDTH / 2.0f, RES_HEIGHT / 2.0f);
-
+	if (numOfPlayers == 2) player2.isAI = false; // 1 or 2 players
+	ball.setPosition(RES_WIDTH / 2.0f, RES_HEIGHT / 2.0f); // ball init pos
+	// background
 	bgtex.loadFromFile("sprites/bg.jpg");
 	background.setSize({ RES_WIDTH, RES_HEIGHT });
 	background.setTexture(&bgtex);
-
+	// 2 railways
 	railtex.loadFromFile("sprites/rail.png");
-
 	rail1.setSize({ 28, RES_HEIGHT });
 	rail1.setOrigin({ 14, RES_HEIGHT / 2.0f });
 	rail1.setTexture(&railtex);
 	rail1.setPosition({ 36, RES_HEIGHT / 2.0f });
-
 	rail2.setSize({ 28, RES_HEIGHT });
 	rail2.setOrigin({ 14, RES_HEIGHT / 2.0f });
 	rail2.setTexture(&railtex);
 	rail2.setPosition({ RES_WIDTH - 36, RES_HEIGHT / 2.0f });
-
+	// score text
 	font.loadFromFile("font.ttf");
 	text.setFont(font);
 	text.setCharacterSize(200);
@@ -118,6 +127,20 @@ Pong::Pong(int numOfPlayers)
 	text.setFillColor(Color::Green);
 	text.setOrigin({ 215, 120 });
 	text.setPosition(RES_WIDTH / 2.0f, RES_HEIGHT / 2.0f);
+	// option text
+	options.setFont(font);
+	options.setCharacterSize(50);
+	options.setFillColor(Color::Green);
+	options.setPosition(300, 350);
+	std::ostringstream str;
+	str << "PLAY AGAIN" << std::endl << "MENU" << std::endl << "EXIT";
+	options.setString(str.str());
+	// cursor
+	cursor.setRadius(BALL_R);
+	cursor.setOrigin({ BALL_R, BALL_R });
+	curtex.loadFromFile("sprites/bomb 0014.png");
+	cursor.setTexture(&curtex);
+	cursor.setPosition(265, 375);
 
 	// initialize losing explosions
 	exptex.loadFromFile("sprites/explode 0000.png");
@@ -143,20 +166,37 @@ int Pong::run(RenderWindow& window)
 		Event event;
 		while (window.pollEvent(event))
 		{
-			if (event.type == sf::Event::Closed)
+			if (event.type == sf::Event::Closed) {
 				window.close();
+				return EXIT;
+			}
 		}
 
 		float dt = clock.restart().asSeconds();
 		if (winner == NO_WINNER) update_state(dt);
 		else if(status != ENDING) ending_state(dt);
 		else {
-			if (Keyboard::isKeyPressed(Keyboard::Space)) return 1;
+			++presskeyrate;
+			if (presskeyrate / (RATE)) {
+				Vector2f pos = cursor.getPosition();
+				if (Keyboard::isKeyPressed(Keyboard::W) || Keyboard::isKeyPressed(Keyboard::Up))
+					if (pos.y > 375.0f && pos.y <= 475.0f) pos.y -= 50.0f;
+				if (Keyboard::isKeyPressed(Keyboard::S) || Keyboard::isKeyPressed(Keyboard::Down))
+					if (pos.y >= 375.0f && pos.y < 475.0f) pos.y += 50.0f;
+				cursor.setPosition(pos);
+				presskeyrate = 0;
+			}
+			if (Keyboard::isKeyPressed(Keyboard::Enter) || Keyboard::isKeyPressed(Keyboard::Space)) {
+				Vector2f pos = cursor.getPosition();
+				if (pos.y == 375.0f) return REPEAT; // repeat
+				if (pos.y == 425.0f) return MENU; // menu
+				if (pos.y == 475.0f) return EXIT; // exit
+			}
 		}
 		render_frame(window);
 		window.display();
 	}
-	return 0;
+	return EXIT;
 }
 
 void Ball::animate()

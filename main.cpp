@@ -22,28 +22,95 @@
 
 	copy ctor
 */
-#include <sstream>
 
 #include "Pong.h"
 
 #define ONE_PLAYER 1
 #define TWO_PLAYERS 2
 
-#define EXIT 0
-#define REPEAT 1
-#define MENU 2
-
 int main()
 {
 	RenderWindow window;
-	window.create(VideoMode(RES_WIDTH, RES_HEIGHT), GAMETILE);
-	while (2) {
-		// UI
+	RectangleShape background;
+	CircleShape cursor;
+	Texture bgtex;
+	Texture curtex;
+	Font font;
+	Text options;
+	int rate = RATE;
+	int ret = REPEAT;
+	int mode = ONE_PLAYER;
 
-		// Start game
-		Pong * game = new Pong(ONE_PLAYER); // start a new game
-		int ret = game->run(window);
-		delete game; // game over
-		if (ret == 0) return ret;
+	// seting up menu background
+	background.setSize({ RES_WIDTH, RES_HEIGHT });
+	bgtex.loadFromFile("sprites/menu.png");
+	background.setTexture(&bgtex);
+
+	// setting up texts
+	font.loadFromFile("font.ttf");
+	options.setFont(font);
+	options.setCharacterSize(50);
+	options.setFillColor(Color::Green);
+	options.setPosition(300, 350);
+	std::ostringstream str;
+	str << "1 PLAYER" << std::endl << "2 PLAYERS" << std::endl << "EXIT";
+	options.setString(str.str());
+
+	// setting up cursor
+	cursor.setRadius(BALL_R);
+	cursor.setOrigin({ BALL_R, BALL_R });
+	curtex.loadFromFile("sprites/bomb 0014.png");
+	cursor.setTexture(&curtex);
+	cursor.setPosition(265, 375);
+
+	// creating window
+	window.create(VideoMode(RES_WIDTH, RES_HEIGHT), GAMETILE);
+
+	Clock clock;
+	while (window.isOpen())
+	{
+		Event event;
+		while (window.pollEvent(event))
+		{
+			if (event.type == sf::Event::Closed) {
+				window.close();
+				return EXIT;
+			}
+		}
+
+		float dt = clock.restart().asSeconds();
+		// update state
+		++rate;
+		if (rate / RATE) {
+			Vector2f pos = cursor.getPosition();
+			if (Keyboard::isKeyPressed(Keyboard::W) || Keyboard::isKeyPressed(Keyboard::Up))
+				if (pos.y > 375.0f && pos.y <= 475.0f) pos.y -= 50.0f;
+			if (Keyboard::isKeyPressed(Keyboard::S) || Keyboard::isKeyPressed(Keyboard::Down))
+				if (pos.y >= 375.0f && pos.y < 475.0f) pos.y += 50.0f;
+			cursor.setPosition(pos);
+			rate = 0;
+			if (Keyboard::isKeyPressed(Keyboard::Enter) || Keyboard::isKeyPressed(Keyboard::Space)) {
+				Vector2f pos = cursor.getPosition();
+				if (pos.y == 375.0f) {}
+				if (pos.y == 425.0f) mode = TWO_PLAYERS;
+				if (pos.y == 475.0f) return EXIT;
+
+				// Start game
+				while (ret == REPEAT) {
+					Pong * game = new Pong(mode); // start a new game
+					ret = game->run(window);
+					delete game; // game over
+					if (ret == EXIT) return ret; // if exit from inside
+					game = nullptr;
+				}
+				ret = REPEAT;
+			}
+		}
+		// rander frame
+		window.clear(Color(0, 0, 255));
+		window.draw(background);
+		window.draw(cursor);
+		window.draw(options);
+		window.display();
 	}
 }

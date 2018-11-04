@@ -7,7 +7,10 @@
 #include <SFML/OpenGL.hpp>
 #include <SFML/Main.hpp>
 
-#define GAMETILE "Rail Defender"
+#include <sstream>
+
+#define GAMETILE "RailDefender"
+#define WINSCORE 1
 #define RES_WIDTH 800 // resolution
 #define RES_HEIGHT 600 // resolution
 #define BALL_R 30.0f // radius of the ball
@@ -18,6 +21,11 @@
 #define BALL_SPEED 0.2f //1.0f
 #define PADDLE_SPEED 300
 #define RATE 100
+
+// return status
+#define EXIT 0
+#define REPEAT 1
+#define MENU 2
 
 enum STATUS { NONE = 0, EXPLODE, FIRE, ENDING };
 enum PLAYER { P1 = 0, P2 = 1 };
@@ -98,12 +106,15 @@ class Pong
 	// background staff
 	Font font;
 	Text text;
+	Text options;
 	RectangleShape background;
 	Texture bgtex;
 	Texture railtex;
 	RectangleShape rail1;
 	RectangleShape rail2;
 	RectangleShape bg;
+	CircleShape cursor;
+	Texture curtex;
 
 	SoundBuffer buf;
 	Sound sound;
@@ -111,8 +122,10 @@ class Pong
 	Texture exptex;
 
 	int rate = RATE;
+	int presskeyrate = RATE;
 	int curexpfr = 0;
 	int exptimes = 0;
+	int curcurfr = 0;
 
 	void update_state(float dt);
 	void ending_state(float dt);
