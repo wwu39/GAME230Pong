@@ -242,6 +242,7 @@ void Ball::explode()
 		v = { BALL_SPEED * cosf(angle), BALL_SPEED * sinf(angle) };
 		if (lastWin == P2) v.x = -v.x;
 		shape.setPosition({ RES_WIDTH / 2.0f, RES_HEIGHT / 2.0f });
+		reload.play();
 	}
 }
 
@@ -283,6 +284,10 @@ Ball::Ball()
 
 	exptex.loadFromFile("sprites/explode 0000.png");
 	explosion.setTexture(&exptex);
+
+	buf2.loadFromFile("sound/reload.wav");
+	reload.setBuffer(buf2);
+	reload.play();
 }
 
 int Ball::move(float dt, Vector2f p1pos, Vector2f p2pos)

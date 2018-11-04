@@ -41,6 +41,8 @@ class Ball
 	Texture exptex;
 	SoundBuffer buf;
 	Sound hitsound;
+	SoundBuffer buf2;
+	Sound reload;
 	int curframe;
 	int curexpfr = 0;
 	int rate;
