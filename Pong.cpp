@@ -181,36 +181,39 @@ int Pong::run(RenderWindow& window)
 				return EXIT;
 			}
 		}
+		if (clock.getElapsedTime() > t1) {
+			float dt = clock.restart().asSeconds();
+			if (winner == NO_WINNER) update_state(dt);
+			else if (status != ENDING) ending_state(dt);
+			else {
+				++presskeyrate;
+				if (presskeyrate / (RATE)) {
+					Vector2f pos = cursor.getPosition();
+					if (Keyboard::isKeyPressed(Keyboard::W) || Keyboard::isKeyPressed(Keyboard::Up))
+						if (pos.y > 375.0f && pos.y <= 475.0f) {
+							pos.y -= 50.0f;
+							optionswitch.play();
+						}
+					if (Keyboard::isKeyPressed(Keyboard::S) || Keyboard::isKeyPressed(Keyboard::Down))
+						if (pos.y >= 375.0f && pos.y < 475.0f) {
+							pos.y += 50.0f;
+							optionswitch.play();
+						}
+					cursor.setPosition(pos);
+					presskeyrate = 0;
+				}
+				if (Keyboard::isKeyPressed(Keyboard::Enter) || Keyboard::isKeyPressed(Keyboard::Space)) {
+					Vector2f pos = cursor.getPosition();
+					if (pos.y == 375.0f) return REPEAT; // repeat
+					if (pos.y == 425.0f) return MENU; // menu
+					if (pos.y == 475.0f) return EXIT; // exit
+				}
+			}
+			render_frame(window);
+			window.display();
 
-		float dt = clock.restart().asSeconds();
-		if (winner == NO_WINNER) update_state(dt);
-		else if(status != ENDING) ending_state(dt);
-		else {
-			++presskeyrate;
-			if (presskeyrate / (RATE)) {
-				Vector2f pos = cursor.getPosition();
-				if (Keyboard::isKeyPressed(Keyboard::W) || Keyboard::isKeyPressed(Keyboard::Up))
-					if (pos.y > 375.0f && pos.y <= 475.0f) {
-						pos.y -= 50.0f;
-						optionswitch.play();
-					}
-				if (Keyboard::isKeyPressed(Keyboard::S) || Keyboard::isKeyPressed(Keyboard::Down))
-					if (pos.y >= 375.0f && pos.y < 475.0f) {
-						pos.y += 50.0f;
-						optionswitch.play();
-					}
-				cursor.setPosition(pos);
-				presskeyrate = 0;
-			}
-			if (Keyboard::isKeyPressed(Keyboard::Enter) || Keyboard::isKeyPressed(Keyboard::Space)) {
-				Vector2f pos = cursor.getPosition();
-				if (pos.y == 375.0f) return REPEAT; // repeat
-				if (pos.y == 425.0f) return MENU; // menu
-				if (pos.y == 475.0f) return EXIT; // exit
-			}
+			clock.restart();
 		}
-		render_frame(window);
-		window.display();
 	}
 	return EXIT;
 }

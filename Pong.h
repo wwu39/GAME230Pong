@@ -18,10 +18,10 @@
 #define PADDLE_W 148.0f
 #define PADDLE_H 132.0f
 #define PADDLE_LOC 36
-#define BALL_SPEED 0.2f //1.0f
-#define BALL_SPEED_INC 0.03f
+#define BALL_SPEED 5.0f //1.0f
+#define BALL_SPEED_INC 0.75f
 #define PADDLE_SPEED 300
-#define RATE 100
+#define RATE 5
 
 // return status
 #define EXIT 0
@@ -31,6 +31,7 @@
 enum STATUS { NONE = 0, EXPLODE, FIRE, ENDING };
 enum PLAYER { P1 = 0, P2 = 1 };
 enum WINNER { NO_WINNER = 0, PLAYER1, PLAYER2 };
+const sf::Time t1 = sf::milliseconds(16.6f);
 
 using namespace sf;
 

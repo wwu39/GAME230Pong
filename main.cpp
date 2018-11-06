@@ -85,54 +85,58 @@ int main()
 				return EXIT;
 			}
 		}
-		// update state
-		if (status == NONE) {
-			++rate;
-			if (rate / RATE) {
-				Vector2f pos = cursor.getPosition();
-				if (Keyboard::isKeyPressed(Keyboard::W) || Keyboard::isKeyPressed(Keyboard::Up))
-					if (pos.y > 375.0f && pos.y <= 475.0f) {
-						pos.y -= 50.0f;
-						optionswitch.play();
-					}
-				if (Keyboard::isKeyPressed(Keyboard::S) || Keyboard::isKeyPressed(Keyboard::Down))
-					if (pos.y >= 375.0f && pos.y < 475.0f) {
-						pos.y += 50.0f;
-						optionswitch.play();
-					}
-				cursor.setPosition(pos);
-				if (Keyboard::isKeyPressed(Keyboard::Enter) || Keyboard::isKeyPressed(Keyboard::Space)) {
+		if (clock.getElapsedTime() > t1) {
+			// update state
+			if (status == NONE) {
+				++rate;
+				if (rate / RATE) {
 					Vector2f pos = cursor.getPosition();
-					if (pos.y == 375.0f) mode = ONE_PLAYER;
-					if (pos.y == 425.0f) mode = TWO_PLAYERS;
-					if (pos.y == 475.0f) return EXIT;
+					if (Keyboard::isKeyPressed(Keyboard::W) || Keyboard::isKeyPressed(Keyboard::Up))
+						if (pos.y > 375.0f && pos.y <= 475.0f) {
+							pos.y -= 50.0f;
+							optionswitch.play();
+						}
+					if (Keyboard::isKeyPressed(Keyboard::S) || Keyboard::isKeyPressed(Keyboard::Down))
+						if (pos.y >= 375.0f && pos.y < 475.0f) {
+							pos.y += 50.0f;
+							optionswitch.play();
+						}
+					cursor.setPosition(pos);
+					if (Keyboard::isKeyPressed(Keyboard::Enter) || Keyboard::isKeyPressed(Keyboard::Space)) {
+						Vector2f pos = cursor.getPosition();
+						if (pos.y == 375.0f) mode = ONE_PLAYER;
+						if (pos.y == 425.0f) mode = TWO_PLAYERS;
+						if (pos.y == 475.0f) return EXIT;
 
-					// Start game
-					while (ret == REPEAT) {
-						Pong * game = new Pong(mode); // start a new game
-						ret = game->run(window);
-						delete game; // game over
-						if (ret == EXIT) return ret; // if exit from inside
-						if (ret == MENU) status = ENDING; // if exit from inside
-						game = nullptr;
+						// Start game
+						while (ret == REPEAT) {
+							Pong * game = new Pong(mode); // start a new game
+							ret = game->run(window);
+							delete game; // game over
+							if (ret == EXIT) return ret; // if exit from inside
+							if (ret == MENU) status = ENDING; // if exit from inside
+							game = nullptr;
+						}
+						ret = REPEAT;
 					}
-					ret = REPEAT;
+					rate = 0;
 				}
-				rate = 0;
 			}
-		}
-		if (status == ENDING) {
-			++rate2;
-			if (rate2 / (RATE * 5)) {
-				status = NONE;
-				rate2 = 0;
+			if (status == ENDING) {
+				++rate2;
+				if (rate2 / (RATE * 5)) {
+					status = NONE;
+					rate2 = 0;
+				}
 			}
+			// rander frame
+			window.clear(Color(0, 0, 255));
+			window.draw(background);
+			window.draw(cursor);
+			window.draw(options);
+			window.display();
+
+			clock.restart();
 		}
-		// rander frame
-		window.clear(Color(0, 0, 255));
-		window.draw(background);
-		window.draw(cursor);
-		window.draw(options);
-		window.display();
 	}
 }
