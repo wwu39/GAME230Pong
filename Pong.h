@@ -19,6 +19,7 @@
 #define PADDLE_H 132.0f
 #define PADDLE_LOC 36
 #define BALL_SPEED 0.2f //1.0f
+#define BALL_SPEED_INC 0.03f
 #define PADDLE_SPEED 300
 #define RATE 100
 
@@ -39,14 +40,17 @@ class Ball
 	RectangleShape explosion;
 	Texture tex[16];
 	Texture exptex[27];
-	SoundBuffer buf;
-	Sound hitsound;
-	SoundBuffer buf2;
+	SoundBuffer hitsoundBuf[10];
+	Sound hitsound[10];
+	SoundBuffer loadsoundBuf[6];
+	Sound loadsound[6];
+	SoundBuffer expBuf;
+	Sound expsound;
+	SoundBuffer reloadBuf;
 	Sound reload;
 	int curframe;
 	int curexpfr = 0;
 	int rate;
-	const Vector2f vinc { 0.02f, 0.02f }; // was 0.1
 	void animate();
 	void explode();
 	void playRandomHitsound();

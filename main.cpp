@@ -85,8 +85,6 @@ int main()
 				return EXIT;
 			}
 		}
-
-		float dt = clock.restart().asSeconds();
 		// update state
 		if (status == NONE) {
 			++rate;
@@ -125,7 +123,7 @@ int main()
 		}
 		if (status == ENDING) {
 			++rate2;
-			if (rate2 / (RATE * 8)) {
+			if (rate2 / (RATE * 5)) {
 				status = NONE;
 				rate2 = 0;
 			}

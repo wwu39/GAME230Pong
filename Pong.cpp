@@ -243,23 +243,13 @@ void Ball::explode()
 void Ball::playRandomHitsound()
 {
 	srand((unsigned)time(nullptr) * unsigned int(v.x));
-	std::ostringstream filename;
-	int idx = 1 + rand() % 10;
-	filename << "sound/metalhit(" << idx << ").wav";
-	buf.loadFromFile(filename.str());
-	hitsound.setBuffer(buf);
-	if (hitsound.getStatus() != SoundSource::Playing) hitsound.play();
+	hitsound[rand() % 10].play();
 }
 
 void Ball::playLoadHitsound()
 {
 	srand((unsigned)time(nullptr) * unsigned int(v.y));
-	std::ostringstream filename;
-	int idx = 1 + rand() % 6;
-	filename << "sound/load(" << idx << ").wav";
-	buf.loadFromFile(filename.str());
-	hitsound.setBuffer(buf);
-	if (hitsound.getStatus() != SoundSource::Playing) hitsound.play();
+	loadsound[rand() % 6].play();
 }
 
 Ball::Ball()
@@ -291,9 +281,30 @@ Ball::Ball()
 	}
 	explosion.setTexture(&exptex[0]);
 
-	buf2.loadFromFile("sound/reload.wav");
-	reload.setBuffer(buf2);
+	// init exp sound
+	expBuf.loadFromFile("sound/explosion.wav");
+	expsound.setBuffer(expBuf);
+
+	// init relaod sound
+	reloadBuf.loadFromFile("sound/reload.wav");
+	reload.setBuffer(reloadBuf);
 	reload.play();
+
+	// init load sound
+	for (int i = 0; i < 6; ++i) {
+		std::ostringstream filename;
+		filename << "sound/load(" << i + 1 << ").wav";
+		loadsoundBuf[i].loadFromFile(filename.str());
+		loadsound[i].setBuffer(loadsoundBuf[i]);
+	}
+
+	// init hit sound
+	for (int i = 0; i < 10; ++i) {
+		std::ostringstream filename;
+		filename << "sound/metalhit(" << i + 1 << ").wav";
+		hitsoundBuf[i].loadFromFile(filename.str());
+		hitsound[i].setBuffer(hitsoundBuf[i]);
+	}
 }
 
 int Ball::move(float dt, Vector2f p1pos, Vector2f p2pos)
@@ -306,15 +317,24 @@ int Ball::move(float dt, Vector2f p1pos, Vector2f p2pos)
 			v.y = -v.y;
 			playRandomHitsound();
 		}
-		// hit a paddle from left or right
-		if ((p1pos.y - PADDLE_H / 2.0f <= pos.y && pos.y <= p1pos.y + PADDLE_H / 2.0f && pos.x - BALL_CR <= p1pos.x && v.x < 0)
-			|| (p2pos.y - PADDLE_H / 2.0f <= pos.y && pos.y <= p2pos.y + PADDLE_H / 2.0f && pos.x + BALL_CR >= p2pos.x && v.x > 0)) {
-			v.x = -v.x;
-			// The angle at which it bounces off depends on where on the paddle the ball hit.
-			if (v.x > 0.0f) v.x += (2 * ((p2pos.y + PADDLE_H / 2.0f) - pos.y) / PADDLE_H * vinc.x);
-			if (v.x < 0.0f) v.x -= (2 * ((p1pos.y + PADDLE_H / 2.0f) - pos.y) / PADDLE_H * vinc.x);
-			if (v.y > 0.0f) v.y += (2 * (pos.y - (p2pos.y - PADDLE_H / 2.0f)) / PADDLE_H * vinc.y);
-			if (v.y < 0.0f) v.y -= (2 * (pos.y - (p1pos.y - PADDLE_H / 2.0f)) / PADDLE_H * vinc.y);
+		// hit left paddle
+		if (p1pos.y - PADDLE_H / 2.0f <= pos.y && pos.y <= p1pos.y + PADDLE_H / 2.0f && pos.x - BALL_CR <= p1pos.x && v.x < 0) {
+			float speed = sqrtf(v.x*v.x + v.y*v.y) + BALL_SPEED_INC;
+			float ratio = (pos.y - (p1pos.y - PADDLE_H / 2.0f)) / PADDLE_H;
+			float angle = (ratio >= 0.5 ? (-0.5*ratio + 1.5) : (-0.5*ratio + 1)) * PI;
+			v.x = -speed * cos(angle);
+			v.y = speed * sin(angle);
+			playLoadHitsound();
+			ret = HIT;
+		}
+		// hit right paddle
+		if (p2pos.y - PADDLE_H / 2.0f <= pos.y && pos.y <= p2pos.y + PADDLE_H / 2.0f && pos.x + BALL_CR >= p2pos.x && v.x > 0) {
+			float speed = sqrtf(v.x*v.x + v.y*v.y) + BALL_SPEED_INC;
+			float ratio = (pos.y - (p2pos.y - PADDLE_H / 2.0f)) / PADDLE_H;
+			float angle = (ratio >= 0.5 ? (-0.5*ratio + 1.5) : (-0.5*ratio + 1)) * PI;
+			//float angle = ((pos.y - (p2pos.y - PADDLE_H / 2.0f)) / PADDLE_H / 2.0f + 0.75f) * PI;
+			v.x = speed * cos(angle);
+			v.y = speed * sin(angle);
 			playLoadHitsound();
 			ret = HIT;
 		}
@@ -322,9 +342,7 @@ int Ball::move(float dt, Vector2f p1pos, Vector2f p2pos)
 	else { 
 		status = EXPLODE;
 		explosion.setPosition(pos);
-		buf.loadFromFile("sound/explosion.wav");
-		hitsound.setBuffer(buf);
-		if (hitsound.getStatus() != SoundSource::Playing) hitsound.play();
+		if (expsound.getStatus() != SoundSource::Playing) expsound.play();
 		if (pos.x < RES_WIDTH / 2.0f) { ++rscr; lastWin = P2; }
 		if (pos.x > RES_WIDTH / 2.0f) { ++lscr; lastWin = P1; }
 	}
@@ -406,6 +424,10 @@ Paddle::Paddle(int side, bool isAI)
 	
 	rate = RATE;
 	reverse = false;
+
+	// init fire sound
+	buf.loadFromFile("sound/cannonfire.wav");
+	firesound.setBuffer(buf);
 }
 
 void Paddle::move(float dt, Vector2f bpos)
@@ -457,7 +479,5 @@ Vector2f Paddle::getPosition()
 
 void Paddle::playCannonFireSound()
 {
-	buf.loadFromFile("sound/cannonfire.wav");
-	firesound.setBuffer(buf);
-	if (firesound.getStatus() != SoundSource::Playing) firesound.play();
+	firesound.play();
 }
